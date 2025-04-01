@@ -7,86 +7,292 @@
     <style>
       body {
         font-family: Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 95vh;
+        background-color: #f4f4f9;
+        color: #333;
         margin: 0;
-        background-color: #f0f4f8;
+        padding: 0;
       }
 
-      #cont {
-        text-align: center;
+      .container {
+        width: 80%;
+        margin: auto;
         padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        background-color: #fff;
-        padding-bottom: 30px;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
       }
 
-      input {
-        height: 30px;
-        width: 250px;
-        padding: 5px 10px;
-        font-size: 1em;
-        border-radius: 10px;
-        border: 1px solid black;
+      h1 {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      form {
+        margin-bottom: 20px;
+      }
+
+      input[type="text"] {
+        padding: 8px;
         margin: 10px 0;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       button {
         padding: 10px 20px;
-        font-size: 1em;
-        cursor: pointer;
-        border-radius: 10px;
-        border: 1px solid black;
-        background-color: green;
+        background-color: #4caf50;
         color: white;
-        margin-top: 20px;
+        border: none;
+        cursor: pointer;
       }
 
       button:hover {
-        background-color: rgba(128, 128, 128, 0.545);
+        background-color: #45a049;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+      }
+
+      h2 {
+        font-size: 1.5em;
+      }
+
+      #add-status,
+      #update-status,
+      #delete-status {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f2f2f2;
       }
     </style>
   </head>
   <body>
-    <div id="cont">
-      <h2>Student Admission Form</h2>
-      <form id="Studentform">
-        <label>Reg No:</label><br />
-        <input type="text" id="regno" required /><br />
+    <div class="container">
+      <h1>Student Admission</h1>
 
-        <label>Student Name:</label><br />
-        <input type="text" id="sname" required /><br />
+      <!-- Add Student Form -->
+      <div id="add-student">
+        <h2>Add Student</h2>
+        <form id="addStudentForm">
+          <label for="regno">Registration Number:</label>
+          <input type="text" id="regno" required />
+          <label for="sname">Student Name:</label>
+          <input type="text" id="sname" required />
+          <button type="submit">Add Student</button>
+        </form>
+        <p id="add-status"></p>
+      </div>
 
-        <button type="submit">Submit</button>
-      </form>
+      <!-- Student List -->
+      <div id="student-list">
+        <h2>Student List</h2>
+        <table id="students">
+          <thead>
+            <tr>
+              <th>Reg No</th>
+              <th>Name</th>
+              <th>Admin Type</th>
+              <th>Verified</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Lateral Students List -->
+      <div id="lateral-list">
+        <h2>Lateral Students List</h2>
+        <table id="lateral">
+          <thead>
+            <tr>
+              <th>Reg No</th>
+              <th>Verified</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Update Student -->
+      <div id="update-student">
+        <h2>Update Student</h2>
+        <form id="updateStudentForm">
+          <label for="update-regno">Registration Number:</label>
+          <input type="text" id="update-regno" required />
+          <label for="update-sname">New Name:</label>
+          <input type="text" id="update-sname" required />
+          <button type="submit">Update Student</button>
+        </form>
+        <p id="update-status"></p>
+      </div>
+
+      <!-- Delete Student -->
+      <div id="delete-student">
+        <h2>Delete Student</h2>
+        <form id="deleteStudentForm">
+          <label for="delete-regno">Registration Number:</label>
+          <input type="text" id="delete-regno" required />
+          <button type="submit">Delete Student</button>
+        </form>
+        <p id="delete-status"></p>
+      </div>
     </div>
 
     <script>
-      document
-        .getElementById("Studentform")
-        .addEventListener("submit", function (event) {
-          event.preventDefault();
-          let stu_data = {
-            regno: document.getElementById("regno").value,
-            sname: document.getElementById("sname").value,
-          };
+      document.addEventListener("DOMContentLoaded", () => {
+        const baseUrl = "http://localhost:3001"; // Change to your API base URL
 
-          fetch("http://localhost:3001/add-student", {
+        // Elements
+        const addStudentForm = document.getElementById("addStudentForm");
+        const updateStudentForm = document.getElementById("updateStudentForm");
+        const deleteStudentForm = document.getElementById("deleteStudentForm");
+        const studentsTable = document
+          .getElementById("students")
+          .getElementsByTagName("tbody")[0];
+        const lateralTable = document
+          .getElementById("lateral")
+          .getElementsByTagName("tbody")[0];
+        const addStatus = document.getElementById("add-status");
+        const updateStatus = document.getElementById("update-status");
+        const deleteStatus = document.getElementById("delete-status");
+
+        // Fetch and display students and lateral students
+        const fetchData = () => {
+          // Fetch students
+          fetch(`${baseUrl}/students`)
+            .then((response) => response.json())
+            .then((data) => {
+              studentsTable.innerHTML = data
+                .map(
+                  (student) => `
+              <tr>
+                <td>${student.regno}</td>
+                <td>${student.sname}</td>
+                <td>${student.admin_type}</td>
+                <td>${student.verified}</td>
+              </tr>
+            `
+                )
+                .join("");
+            })
+            .catch((err) => console.error("Error fetching students:", err));
+
+          // Fetch lateral students
+          fetch(`${baseUrl}/lateral`)
+            .then((response) => response.json())
+            .then((data) => {
+              lateralTable.innerHTML = data
+                .map(
+                  (student) => `
+              <tr>
+                <td>${student.regno}</td>
+                <td>${student.verified}</td>
+              </tr>
+            `
+                )
+                .join("");
+            })
+            .catch((err) =>
+              console.error("Error fetching lateral students:", err)
+            );
+        };
+
+        // Add student
+        addStudentForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const regno = document.getElementById("regno").value;
+          const sname = document.getElementById("sname").value;
+
+          fetch(`${baseUrl}/add-student`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(stu_data),
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ regno, sname }),
           })
             .then((response) => response.json())
             .then((data) => {
-              alert(data.message);
-              document.getElementById("Studentform").reset();
+              addStatus.textContent = data.message;
+              fetchData(); // Refresh student list
             })
-            .catch((error) => console.error("Error:", error));
+            .catch((err) => {
+              addStatus.textContent = "❌ Error adding student.";
+              console.error("Error adding student:", err);
+            });
         });
+
+        // Update student
+        updateStudentForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const regno = document.getElementById("update-regno").value;
+          const sname = document.getElementById("update-sname").value;
+
+          fetch(`${baseUrl}/update-student`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ regno, sname }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              updateStatus.textContent = data.message;
+              fetchData(); // Refresh student list
+            })
+            .catch((err) => {
+              updateStatus.textContent = "❌ Error updating student.";
+              console.error("Error updating student:", err);
+            });
+        });
+
+        // Delete student
+        deleteStudentForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const regno = document.getElementById("delete-regno").value;
+
+          fetch(`${baseUrl}/delete-student`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ regno }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              deleteStatus.textContent = data.message;
+              fetchData(); // Refresh student list
+            })
+            .catch((err) => {
+              deleteStatus.textContent = "❌ Error deleting student.";
+              console.error("Error deleting student:", err);
+            });
+        });
+
+        // Initial fetch of student and lateral data
+        fetchData();
+      });
     </script>
   </body>
 </html>
